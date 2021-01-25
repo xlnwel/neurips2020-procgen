@@ -1,0 +1,221 @@
+agent-chaser:
+    env: my_procgen  # Change this at your own risk :D
+    disable_evaluation_worker: True
+    run: Agent
+    # Can be replaced by any of the available agents as described at :
+    # https://github.com/ray-project/ray/blob/master/rllib/agents/registry.py#L103
+    #
+    # Internally rllib uses the terminology of Trainable Algorithms Agents depending
+    # on the context in which it is used. In this repository we will consistently
+    # use the terminology of "Algorithms" to refer to these Trainables/Agents.
+    #
+    # This can also be replaced by a custom "algorithm"
+    # For addition of custom algorithms
+    # Please refer to :
+    # https://github.com/AIcrowd/neurips2020-procgen-starter-kit/blob/master/algorithms/registry.py
+    ################################################
+    # === Stop Conditions ===
+    ################################################
+    stop:
+        timesteps_total: 8000000    # 8M frames
+        # time_total_s: 7200  # 2 hours
+
+    ################################################
+    # === Settings for Checkpoints ===
+    ################################################
+    checkpoint_freq: 25
+    checkpoint_at_end: True
+    keep_checkpoints_num: 5
+
+    config:
+        framework: tfe
+        eager_tracing: True
+        use_state_preprocessor: True
+        # === Model ===
+        twin_q: False
+        model:
+            custom_model: SACIQN
+            custom_model_config:
+                encoder: 
+                    cnn_name: procgen
+                    obs_range: [0, 1]
+                    filters: [32, 64, 64, 64] # [16, 32, 32, 32]
+                    n_blocks: [1, 1, 1, 1]
+                    kernel_initializer: glorot_uniform
+                    stem: conv_maxblurpool
+                    # stem_kwargs: 
+                    #     am: cbam
+                    #     am_kwargs:
+                    #         kernel_size: 1
+                    #         excitation_type: 1l
+                    #         sa_on: False
+                    subsample: conv_maxblurpool
+                    # subsample_kwargs:
+                    #     am: cbam
+                    #     am_kwargs:
+                    #         kernel_size: 1
+                    #         excitation_type: 1l
+                    #         sa_on: False
+                    block: resv1
+                    block_kwargs:
+                        conv: conv2d
+                        filter_coefs: []
+                        kernel_sizes: [3, 3]
+                        norm: null
+                        norm_kwargs: {}
+                        activation: relu
+                        am: cbam
+                        # am_kwargs: 
+                        #     kernel_size: 3
+                        #     excitation_type: 1l
+                        #     sa_on: False
+                        dropout_rate: 0
+                        rezero: False
+                    sa: conv_sa
+                    sa_pos: []
+                    sa_kwargs:
+                        key_ratio: 1
+                        val_ratio: 1
+                        downsample_ratio: 1
+                    deter_stoch: False
+                    belief: False
+                    out_activation: null
+                    out_size: null
+                actor:
+                    units_list: [512]
+                    layer_type: dense
+                    norm: null
+                    kernel_initializer: glorot_uniform
+                    activation: relu
+                q:
+                    units_list: [512]
+                    layer_type: dense
+                    norm: null
+                    kernel_initializer: glorot_uniform
+                    activation: relu
+                    duel: False
+
+                    tau_embed_size: 64
+                    phi_activation: relu
+                    K: &K 64
+                temperature:
+                    temp_type: constant
+                    value: .01
+
+        schedule_tec: False
+        target_entropy_coef: .8
+            # - [4.e+4, .8]
+            # - [7.e+4, .3]
+        n_step: 3
+        max_step: 5
+        gamma: .99
+        data_augmentation: False
+            # pad_crop: 
+            #     pad: 12
+            #     mode: edge
+            #     prob: 1
+        dr_coef: 1
+        kl_coef: 0
+        epsilon_greedy: True
+        reward_scale: 2.
+        reward_clip: 10.
+        prior_lr: 1.e-3
+        entropy_v: True
+        n_actions: 10
+        reward_entropy: True
+        reward_prior: False
+        temp_type: log
+        min_temp: -0.3
+        max_temp: 1
+ 
+        N: 64
+        N_PRIME: 64
+        K: *K
+        KAPPA: 1
+
+        learning_starts: 1600
+        train_batch_size: 64
+        rollout_fragment_length: 50
+        target_network_update_freq: 96000
+        timesteps_per_iteration: 25000
+        training_intensity: null
+
+        # === Replay buffer ===
+        # Size of the replay buffer. Note that if async_updates is set then
+        # each worker will have a replay buffer of this size.
+        buffer_size: 250000
+        # If True prioritized replay buffer will be used.
+        prioritized_replay: True
+        prioritized_replay_alpha: 0.6
+        prioritized_replay_beta: 0.4
+        prioritized_replay_eps: 1.e-6
+        prioritized_replay_beta_annealing_timesteps: 2000000
+        final_prioritized_replay_beta: 0.4
+        # Whether to compute priorities on workers.
+        worker_side_prioritization: True
+        # Whether to LZ4 compress observations
+        compress_observations: False
+
+        # === Optimization ===
+        optimization: 
+            schedule_lr: False
+            actor_lr: 2.5e-4
+            critic_lr: 2.5e-4
+            temp_lr: 2.5e-4
+            epsilon: 3.125e-4
+        
+        optimizer: 
+            max_weight_sync_delay: 400   # timestep sync weights with workers, decreasing this increases tps
+            num_replay_buffer_shards: 1
+            debug: False
+        
+        # If not null clip gradients during optimization at this value.
+        grad_clip: null
+
+        # === Parallelism ===
+        # Whether to use a GPU for local optimization.
+        num_gpus: .28
+        # Number of workers for collecting samples with. This only makes sense
+        # to increase if your environment is particularly slow to sample or if
+        # you"re using the Async or Ape-X optimizers.
+        num_workers: 5
+        num_envs_per_worker: 4
+        # Whether to allocate GPUs for workers (if > 0).
+        num_gpus_per_worker: .12
+        # Whether to allocate CPUs for workers (if > 0).
+        num_cpus_per_worker: 1
+        num_cpus_for_driver: 1
+        # Prevent iterations from going lower than this time span.
+        min_iter_time_s: 60
+
+        preprocessor_pref: null
+
+        # Use a Beta-distribution instead of a SquashedGaussian for bounded
+        # continuous action spaces (not recommended for debugging only).
+        _use_beta_distribution: False
+
+        # preset config
+        env_config:
+            env_name: chaser
+            num_levels: 0
+            start_level: 0
+            paint_vel_info: False
+            use_generated_assets: False
+            distribution_mode: easy
+            center_agent: True
+            use_sequential_levels: False
+            use_backgrounds: True
+            restrict_themes: False
+            use_monochrome_assets: False
+
+            frame_stack: 1
+
+
+        # We use this to generate the videos during training
+        # evaluation_interval: 25
+        # evaluation_num_workers: 1
+        # evaluation_num_episodes: 3
+        # evaluation_config:
+        #     num_envs_per_worker: 1
+        #     env_config:
+        #         render_mode: rgb_array

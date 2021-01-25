@@ -1,0 +1,10 @@
+#!/bin/zsh
+
+mv ~/ray_results/saciqn/plunder-am=cbam-sa_pos=2-deter_stoch=True-belief=False-eps_max=.3-out_act=relu \
+ ~/ray_results/saciqn/plunder-am=cbam-sa_pos=2-deter_stoch=True-belief=False-eps_max=.3-n_envs=3-out_act=relu
+mv ~/ray_results/saciqn/bigfish-am=cbam-sa_pos=2-deter_stoch=True-belief=False-eps_max=.3-out_act=relu \
+ ~/ray_results/saciqn/bigfish-am=cbam-sa_pos=2-deter_stoch=True-belief=False-eps_max=.3-n_envs=3-out_act=relu
+mv ~/ray_results/saciqn/fruitbot-am=cbam-sa_pos=2-deter_stoch=True-belief=False-eps_max=.3-out_act=relu \
+ ~/ray_results/saciqn/fruitbot-am=cbam-sa_pos=2-deter_stoch=True-belief=False-eps_max=.3-n_envs=3-out_act=relu
+mv ~/ray_results/saciqn/chaser-am=cbam-sa_pos=2-deter_stoch=True-belief=False-eps_max=.3-out_act=relu \
+ ~/ray_results/saciqn/chaser-am=cbam-sa_pos=2-deter_stoch=True-belief=False-eps_max=.3-n_envs=3-out_act=relu

@@ -1,0 +1,6 @@
+ray[rllib]==0.8.6
+procgen==0.10.2
+tensorflow-gpu==2.2.0
+tensorflow-probability==0.10.0
+mlflow==1.8.0
+boto3==1.13.10

@@ -1,0 +1,54 @@
+#!/bin/zsh
+
+# exit when any command fails
+# set -e
+
+# envs=("heist" "maze" "chaser" "climber" "caveflyer" "dodgeball" "jumper" "fruitbot" "leaper" "bossfight")
+# envs=("dodgeball" "jumper" "maze" "caveflyer")
+envs=("chaser" "plunder")
+# envs=("plunder" "chaser" "dodgeball" "starpilot" "jumper" "caveflyer" "bigfish" "climber" "fruitbot" "leaper" "bossfight" "heist")
+args1=(True False)
+args2=(1 .6)
+args3=("1.e-3")
+args4=("schedule")
+algos=("saciqn")
+
+for e in "${envs[@]}";
+do
+    for a in "${algos[@]}";
+    do
+        k=0
+        for a1 in "${args1[@]}";
+        do
+            ((k++))
+            for a2 in "${args2[@]}"; 
+            do
+                for a3 in "${args3[@]}";
+                do
+                    for a4 in "${args4[@]}";
+                    do
+                        sed -e "s/ENV/${e}/g" -e "s/DETER_STOCH/${a1}/g" \
+                            "experiments/${a}_template.yaml" > "experiments/${a}.yaml"
+                        sed -e "s/AGENT/${a}/g" run_template.sh > run.sh
+                        diff --color "experiments/${a}_template.yaml" "experiments/${a}.yaml"
+                        exp="experiments/${a}.yaml"
+                        exp_name=$(cat $exp | grep -Ev '^ |^#' | head -n1 | awk -F':' '{print $1}')
+                        name="${a}-deter_stoch=${a1}"
+                        target_sub_dir="${e}/${name}"
+                        dir="$HOME/ray_results"
+                        mkdir -p "${dir}/${e}"
+                        target_dir="$dir/$target_sub_dir"
+                        py_script="./run.sh --train -n ${target_sub_dir} ${@} >& ${dir}/${e}/${name}-log"
+                        echo ${py_script}
+                        eval ${py_script}
+                        latest_dir=$(ls -trd $dir/$exp_name/* | grep -v json | tail -n 1)
+                        mv_script="mv $latest_dir $target_dir" 
+                        echo ${mv_script}
+                        eval ${mv_script}
+                        mv "${dir}/${e}/${name}-log" "${target_dir}/logs"
+                    done
+                done
+            done
+        done
+    done
+done
